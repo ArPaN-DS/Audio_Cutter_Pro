@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Cutter Pro — Professional Audio Editor</title>
+    <meta name="description"
+        content="Free online audio cutter. Cut, trim, fade, normalize and export audio instantly. No signup required.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/wavesurfer.js@7"></script>
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.min.js"></script>
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/timeline.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+
+<body>
+
+    <!-- ─── HEADER ─── -->
+    <header>
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+            <h1>Audio Cutter <span class="pro-badge">PRO</span></h1>
+        </div>
+        <div class="header-actions">
+            <button id="newFileBtn" class="header-btn hidden" title="Load a different file">
+                <i class="fas fa-folder-open"></i>
+            </button>
+            <button id="helpBtn" class="header-btn" title="Show all keyboard shortcuts">
+                <i class="fas fa-keyboard"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ─── MAIN ─── -->
+    <div class="container">
+        <div class="card">
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab-btn active" id="btnTabUpload">
+                    <i class="fas fa-upload"></i> Upload File
+                </button>
+                <button class="tab-btn" id="btnTabRecord">
+                    <i class="fas fa-microphone"></i> Record Audio
+                </button>
+            </div>
+
+            <!-- UPLOAD AREA -->
+            <div class="upload-area" id="uploadSection">
+                <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <p class="upload-title">Drop your Audio or Video file here</p>
+                <p class="upload-subtitle">Supports MP3, WAV, OGG, FLAC, M4A, MP4, MKV and more</p>
+                <input type="file" id="fileInput" accept="audio/*,video/*">
+            </div>
+
+            <!-- RECORD AREA -->
+            <div class="record-area hidden" id="recordSection">
+                <button id="recordBtn" class="record-circle">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <p id="recordStatus">Click the red button to start recording from your microphone</p>
+                <button id="stopRecordBtn" class="stop-btn hidden">
+                    <i class="fas fa-stop"></i> Stop & Edit
+                </button>
+            </div>
+
+            <!-- ─── EDITOR INTERFACE ─── -->
+            <div id="editor-interface" class="hidden">
+
+                <!-- FILE INFO BAR -->
+                <div class="file-info-bar" id="fileInfoBar">
+                    <div class="file-info-left">
+                        <div class="file-detail">
+                            <i class="fas fa-file-audio"></i>
+                            <span id="fileName">—</span>
+                        </div>
+                        <div class="file-detail">
+                            <i class="fas fa-clock"></i>
+                            <span id="fileDuration">—</span>
+                        </div>
+                        <div class="file-detail">
+                            <i class="fas fa-weight-hanging"></i>
+                            <span id="fileSize">—</span>
+                        </div>
+                    </div>
+                    <button id="removeAudioBtn" class="remove-audio-btn"
+                        title="Remove this audio and load a different file">
+                        <i class="fas fa-times"></i> Remove
+                    </button>
+                </div>
+
+                <!-- WAVEFORM -->
+                <div id="waveform-container">
+                    <div id="waveform"></div>
+                    <div id="wave-timeline"></div>
+                    <div class="waveform-hint">
+                        <i class="fas fa-hand-pointer"></i> Double-click the waveform to add a cut region · Drag region
+                        edges to resize
+                    </div>
+                </div>
+
+                <!-- TRANSPORT CONTROLS -->
+                <div class="transport-bar">
+                    <!-- Left: Playback -->
+                    <div class="transport-left">
+                        <button id="playBtn" class="play-btn" title="Play or Pause your audio">
+                            <i class="fas fa-play" id="playIcon"></i>
+                        </button>
+                        <div class="time-display">
+                            <span id="currentTime">0:00</span>
+                            <span class="time-separator">/</span>
+                            <span id="totalTime">0:00</span>
+                        </div>
+                    </div>
+
+                    <!-- Center: Zoom -->
+                    <div class="transport-center">
+                        <i class="fas fa-search-minus"></i>
+                        <input type="range" id="zoomSlider" min="0" max="200" value="0" class="styled-range">
+                        <i class="fas fa-search-plus"></i>
+                        <span class="tooltip-trigger">
+                            <i class="fas fa-info-circle info-icon"></i>
+                            <span class="tooltip">Zoom into the waveform to make precise cuts. Drag right to zoom in,
+                                left for full view.</span>
+                        </span>
+                    </div>
+
+                    <!-- Right: Volume & Speed -->
+                    <div class="transport-right">
+                        <div class="control-group">
+                            <button id="muteBtn" class="mini-btn" title="Click to mute or unmute">
+                                <i class="fas fa-volume-up" id="volumeIcon"></i>
+                            </button>
+                            <input type="range" id="volumeSlider" min="0" max="100" value="80"
+                                class="styled-range volume-range" title="Drag to adjust preview volume">
+                            <span class="tooltip-trigger">
+                                <i class="fas fa-info-circle info-icon"></i>
+                                <span class="tooltip">Adjust how loud the audio plays in your browser. This does NOT
+                                    change the exported file volume.</span>
+                            </span>
+                        </div>
+                        <div class="control-group">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <select id="speedControl" class="styled-select" title="Change playback speed">
+                                <option value="0.5">0.5×</option>
+                                <option value="0.75">0.75×</option>
+                                <option value="1" selected>1×</option>
+                                <option value="1.25">1.25×</option>
+                                <option value="1.5">1.5×</option>
+                                <option value="2">2×</option>
+                            </select>
+                            <span class="tooltip-trigger">
+                                <i class="fas fa-info-circle info-icon"></i>
+                                <span class="tooltip">Play audio faster or slower to find the right cut point. Does NOT
+                                    affect the exported file speed.</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REGION MANAGER -->
+                <div class="region-manager" id="regionManager">
+                    <div class="region-header">
+                        <h4>
+                            <i class="fas fa-cut"></i> Cut Regions
+                            <span class="region-count-badge" id="regionCount">0</span>
+                            <span class="tooltip-trigger">
+                                <i class="fas fa-info-circle info-icon"></i>
+                                <span class="tooltip">Regions are the parts of your audio you want to keep. You can add
+                                    multiple regions to extract several clips at once. Click a region to select it,
+                                    press Delete to remove it. Double-click a region name to rename it.</span>
+                            </span>
+                        </h4>
+                        <div class="region-actions-header">
+                            <button id="undoBtn" class="btn-outline" title="Undo last action (Ctrl+Z)" disabled>
+                                <i class="fas fa-undo"></i> Undo
+                            </button>
+                            <button id="clearAllBtn" class="btn-outline btn-danger-outline"
+                                title="Remove all regions (can undo)">
+                                <i class="fas fa-trash-alt"></i> Clear All
+                            </button>
+                            <button id="addRegionBtn" class="btn-small"
+                                title="Add a new cut region at the current playback position">
+                                <i class="fas fa-plus"></i> Add Region
+                            </button>
+                        </div>
+                    </div>
+                    <div id="regionList"></div>
+                </div>
+
+                <!-- ─── EXPORT PANEL ─── -->
+                <form id="cutForm">
+                    <div class="export-panel">
+
+                        <!-- EFFECTS -->
+                        <div class="export-section">
+                            <h5>
+                                <i class="fas fa-magic"></i> Effects
+                                <span class="tooltip-trigger">
+                                    <i class="fas fa-info-circle info-icon"></i>
+                                    <span class="tooltip">Optional audio effects applied to your exported file. Click
+                                        any card to enable/disable it.</span>
+                                </span>
+                            </h5>
+                            <div class="effect-grid">
+                                <label class="effect-option">
+                                    <input type="checkbox" name="fade_in" value="true">
+                                    <div class="effect-card">
+                                        <i class="fas fa-volume-up"></i>
+                                        <span>Fade In</span>
+                                        <small>Audio starts quiet and gradually gets louder — prevents harsh
+                                            starts</small>
+                                    </div>
+                                </label>
+                                <label class="effect-option">
+                                    <input type="checkbox" name="fade_out" value="true">
+                                    <div class="effect-card">
+                                        <i class="fas fa-volume-down"></i>
+                                        <span>Fade Out</span>
+                                        <small>Audio gradually gets quieter at the end — smooth ending</small>
+                                    </div>
+                                </label>
+                                <label class="effect-option">
+                                    <input type="checkbox" name="normalize" value="true">
+                                    <div class="effect-card">
+                                        <i class="fas fa-balance-scale"></i>
+                                        <span>Normalize</span>
+                                        <small>Makes quiet audio louder and loud audio even — perfect volume</small>
+                                    </div>
+                                </label>
+                                <label class="effect-option">
+                                    <input type="checkbox" name="reverse" value="true">
+                                    <div class="effect-card">
+                                        <i class="fas fa-undo"></i>
+                                        <span>Reverse</span>
+                                        <small>Plays the audio backwards — great for creative effects</small>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- FORMAT -->
+                        <div class="export-section">
+                            <h5>
+                                <i class="fas fa-file-export"></i> Output Format
+                                <span class="tooltip-trigger">
+                                    <i class="fas fa-info-circle info-icon"></i>
+                                    <span class="tooltip">Choose the file type for your download. MP3 is smaller and
+                                        works everywhere. WAV is studio quality but larger.</span>
+                                </span>
+                            </h5>
+                            <div class="format-grid">
+                                <label class="format-option">
+                                    <input type="radio" name="format" value="mp3" checked>
+                                    <div class="format-card">
+                                        <strong>MP3</strong>
+                                        <span>Smaller file, great for sharing</span>
+                                    </div>
+                                </label>
+                                <label class="format-option">
+                                    <input type="radio" name="format" value="wav">
+                                    <div class="format-card">
+                                        <strong>WAV</strong>
+                                        <span>Best quality, no compression</span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- EXPORT MODE -->
+                            <div class="format-grid" id="exportModeGroup" style="display:none; margin-top:12px;">
+                                <label class="format-option">
+                                    <input type="radio" name="export_mode" value="merged" checked>
+                                    <div class="format-card">
+                                        <strong>Merge All</strong>
+                                        <span>Combine regions into one file</span>
+                                    </div>
+                                </label>
+                                <label class="format-option">
+                                    <input type="radio" name="export_mode" value="separate">
+                                    <div class="format-card">
+                                        <strong>Separate Files</strong>
+                                        <span>Each region as its own file (ZIP)</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- DOWNLOAD BUTTON -->
+                        <button type="submit" id="submitBtn">
+                            <i class="fas fa-download"></i>
+                            <span id="btnText">Download Cut</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SPINNER -->
+    <div id="loadingOverlay" class="hidden">
+        <div class="spinner-container">
+            <div class="spinner"></div>
+            <p id="loadingText">Processing your audio...</p>
+        </div>
+    </div>
+
+    <!-- KEYBOARD SHORTCUTS -->
+    <div id="shortcutsOverlay" class="shortcuts-overlay hidden">
+        <div class="shortcuts-panel">
+            <div class="shortcuts-header">
+                <h3><i class="fas fa-keyboard"></i> Keyboard Shortcuts</h3>
+                <button id="closeShortcuts" class="close-btn">&times;</button>
+            </div>
+            <div class="shortcuts-list">
+                <div class="shortcut-item"><kbd>Space</kbd><span>Play / Pause audio</span></div>
+                <div class="shortcut-item"><kbd>Double-Click</kbd><span>Add a new cut region on waveform</span></div>
+                <div class="shortcut-item"><kbd>Click Region</kbd><span>Select a region (shows red border)</span></div>
+                <div class="shortcut-item"><kbd>Delete</kbd><span>Remove the selected region</span></div>
+                <div class="shortcut-item"><kbd>Ctrl + Z</kbd><span>Undo last action (add/delete/clear)</span></div>
+                <div class="shortcut-item"><kbd>Drag Edges</kbd><span>Resize a region by dragging its edges</span></div>
+                <div class="shortcut-item"><kbd>← / →</kbd><span>Skip back / forward 5 seconds</span></div>
+                <div class="shortcut-item"><kbd>M</kbd><span>Mute / Unmute preview audio</span></div>
+                <div class="shortcut-item"><kbd>?</kbd><span>Show this help panel</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>
