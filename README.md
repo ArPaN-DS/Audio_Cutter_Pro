@@ -28,7 +28,7 @@
 
 | 🔒 Privacy-First | 🤖 Local AI Tools | ⚡ Feature-Rich | 🌐 Browser-Based |
 |:---:|:---:|:---:|:---:|
-| Files stay on your server — never sent to cloud APIs | Silence detection, auto-trim, BPM, and noise reduction (Runs 100% on CPU, even on resource-constrained devices) | Multi-region cutting, effects, undo/redo, mic recording | Works on any device with a browser — no app install |
+| Files stay on your server — never sent to cloud APIs | Silence detection, Transcript generator, auto-trim, BPM, and noise reduction (Runs 100% on CPU, even on resource-constrained devices) | Multi-region cutting, effects, undo/redo, mic recording | Works on any device with a browser — no app install |
 
 ---
 
