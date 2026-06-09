@@ -1267,7 +1267,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             showToast('📝 Transcription timeline loaded!', 'success');
         });
-    }
+    };
+}
 
     // Results panel close button
     document.getElementById('closeAiResults').onclick = () => {
