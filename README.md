@@ -28,7 +28,7 @@
 
 | 🔒 Privacy-First | 🤖 Local AI Tools | ⚡ Feature-Rich | 🌐 Browser-Based |
 |:---:|:---:|:---:|:---:|
-| Files stay on your server — never sent to cloud APIs | Silence detection, auto-trim, BPM, and noise reduction | Multi-region cutting, effects, undo/redo, mic recording | Works on any device with a browser — no app install |
+| Files stay on your server — never sent to cloud APIs | Silence detection, auto-trim, BPM, and noise reduction (Runs 100% on CPU, even on resource-constrained devices) | Multi-region cutting, effects, undo/redo, mic recording | Works on any device with a browser — no app install |
 
 ---
 
@@ -45,7 +45,7 @@
 | ⌨️ **Keyboard Shortcuts** | `Space`, `Delete`, `Ctrl+Z`, `← / →`, `M`, `?` |
 | 📱 **Fully Responsive** | Works on mobile, tablet, and desktop |
 | 🎨 **Premium Design** | Glassmorphism UI — clean, modern, professional |
-| 🤖 **AI-Powered Analysis** | Local silence detection, auto-trim, beat tracking (BPM), voice activity detection (VAD), and local noise reduction |
+| 🤖 **AI-Powered Analysis** | Local silence detection, auto-trim, beat tracking (BPM), voice activity detection (VAD), and local noise reduction — runs 100% on CPU, even on resource-constrained devices |
 
 ---
 
