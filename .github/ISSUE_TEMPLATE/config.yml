@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Ask a Question / Get Help
+    url: https://github.com/ArPaN-DS/Audio_Cutter/discussions
+    about: For usage questions, setup help, or general discussion — please use GitHub Discussions instead of opening an issue.
+  - name: 📖 Read the Documentation
+    url: https://github.com/ArPaN-DS/Audio_Cutter/tree/main/docs
+    about: Check the full documentation first — your question may already be answered!
