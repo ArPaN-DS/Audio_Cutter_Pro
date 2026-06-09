@@ -45,6 +45,7 @@
 | ⌨️ **Keyboard Shortcuts** | `Space`, `Delete`, `Ctrl+Z`, `← / →`, `M`, `?` |
 | 📱 **Fully Responsive** | Works on mobile, tablet, and desktop |
 | 🎨 **Premium Design** | Glassmorphism UI — clean, modern, professional |
+| 🤖 **AI-Powered Analysis** | Local silence detection, auto-trim, beat tracking (BPM), voice activity detection (VAD), local noise reduction, and optional Whisper translation |
 
 ---
 
@@ -122,6 +123,7 @@ python app.py
 ```
 Audio_Cutter/
 ├── app.py                  # Flask backend — routes & audio processing
+├── ai_processor.py         # Local AI processing engine (silence, beats, denoise, Whisper)
 ├── logger.py               # PostgreSQL upload logger (optional)
 ├── requirements.txt        # Python dependencies
 ├── .env.example            # Environment configuration template
@@ -186,10 +188,11 @@ cp .env.example .env
 
 Planned features for upcoming releases:
 
-- [ ] **v1.1** — Waveform zoom controls + speed adjustment (0.5×–2×)
-- [ ] **v1.2** — Batch file processing (multiple files in one session)
-- [ ] **v1.3** — Audio merge from multiple source files
-- [ ] **v1.4** — Dark / Light mode toggle
+- [x] **v1.1** — Waveform zoom controls + speed adjustment (0.5×–2×)
+- [x] **v1.2** — Local AI integrations (Silence detection, auto-trim, BPM, denoise, Whisper)
+- [ ] **v1.3** — Batch file processing (multiple files in one session)
+- [ ] **v1.4** — Audio merge from multiple source files
+- [ ] **v1.5** — Dark / Light mode toggle
 - [ ] **v2.0** — Docker one-command deployment
 
 > 💡 Have an idea? [Open a feature request →](https://github.com/ArPaN-DS/Audio_Cutter/issues/new?template=feature_request.yml)

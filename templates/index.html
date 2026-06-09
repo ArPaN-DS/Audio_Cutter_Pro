@@ -190,6 +190,126 @@
                     <div id="regionList"></div>
                 </div>
 
+                <!-- ─── AI TOOLS PANEL ─── -->
+                <div class="ai-tools-panel">
+                    <div class="ai-panel-header">
+                        <div class="ai-panel-title">
+                            <div class="ai-panel-icon-wrap">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="ai-panel-title-text">
+                                <h5>AI Audio Assistants</h5>
+                                <p>Enhance, cut, and analyze your audio using advanced machine learning models.</p>
+                            </div>
+                        </div>
+                        <div class="ai-cpu-badge">
+                            <i class="fas fa-shield-halved"></i> 100% Private & Local
+                        </div>
+                    </div>
+                    
+                    <div class="ai-tools-container">
+                        <!-- Card 1: Clean & Enhance -->
+                        <div class="ai-tool-card">
+                            <div class="ai-tool-card-header">
+                                <div class="ai-tool-card-icon-wrap clean-prep">
+                                    <i class="fas fa-magic"></i>
+                                </div>
+                                <div class="ai-tool-card-info">
+                                    <h6>Clean & Prep Audio</h6>
+                                    <p>Enhance clarity and clean up raw files</p>
+                                </div>
+                            </div>
+                            <div class="ai-tool-card-desc">
+                                Remove background noise and hums, or instantly locate and trim silent sections at the start and end.
+                            </div>
+                            <div class="ai-tool-actions-row">
+                                <button type="button" class="ai-tool-btn" id="aiDenoiseBtn">
+                                    <span class="ai-btn-icon"><i class="fas fa-wind"></i></span>
+                                    <div class="ai-btn-texts">
+                                        <strong>Remove Noise</strong>
+                                        <span class="ai-btn-desc">Clean background hiss</span>
+                                    </div>
+                                </button>
+                                <button type="button" class="ai-tool-btn" id="aiTrimBtn">
+                                    <span class="ai-btn-icon"><i class="fas fa-crop-alt"></i></span>
+                                    <div class="ai-btn-texts">
+                                        <strong>Trim Silent Edges</strong>
+                                        <span class="ai-btn-desc">Detect trim start/end</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Find Cuts & Speech -->
+                        <div class="ai-tool-card">
+                            <div class="ai-tool-card-header">
+                                <div class="ai-tool-card-icon-wrap split-segment">
+                                    <i class="fas fa-scissors"></i>
+                                </div>
+                                <div class="ai-tool-card-info">
+                                    <h6>Find Pauses & Speech</h6>
+                                    <p>Locate natural divisions & voices</p>
+                                </div>
+                            </div>
+                            <div class="ai-tool-card-desc">
+                                Find silent pauses to split your audio cleanly, or isolate sections where people are actively speaking.
+                            </div>
+                            <div class="ai-tool-actions-row">
+                                <button type="button" class="ai-tool-btn" id="aiSilenceBtn">
+                                    <span class="ai-btn-icon"><i class="fas fa-volume-mute"></i></span>
+                                    <div class="ai-btn-texts">
+                                        <strong>Find Silent Pauses</strong>
+                                        <span class="ai-btn-desc">Find quiet moments</span>
+                                    </div>
+                                </button>
+                                <button type="button" class="ai-tool-btn" id="aiVadBtn">
+                                    <span class="ai-btn-icon"><i class="fas fa-comments"></i></span>
+                                    <div class="ai-btn-texts">
+                                        <strong>Find Speaking Voices</strong>
+                                        <span class="ai-btn-desc">Isolate vocal sections</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Music Rhythms -->
+                        <div class="ai-tool-card">
+                            <div class="ai-tool-card-header">
+                                <div class="ai-tool-card-icon-wrap rhythm-music">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <div class="ai-tool-card-info">
+                                    <h6>Music Rhythm Finder</h6>
+                                    <p>Track tempo and musical beats</p>
+                                </div>
+                            </div>
+                            <div class="ai-tool-card-desc">
+                                Calculate the speed (BPM) of a track and snap your cut boundaries perfectly to the nearest musical beat.
+                            </div>
+                            <div class="ai-tool-actions-row">
+                                <button type="button" class="ai-tool-btn" id="aiBeatBtn">
+                                    <span class="ai-btn-icon"><i class="fas fa-drum"></i></span>
+                                    <div class="ai-btn-texts">
+                                        <strong>Music Beat Finder</strong>
+                                        <span class="ai-btn-desc">Detect tempo & beats</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI RESULTS SUB-PANEL -->
+                    <div id="aiResultsPanel" class="ai-results-panel hidden">
+                        <div class="ai-results-header">
+                            <h6><i class="fas fa-square-poll-horizontal" style="color: var(--ai-accent);"></i> AI Analysis Results</h6>
+                            <button type="button" id="closeAiResults" class="close-results-btn" title="Close results">&times;</button>
+                        </div>
+                        <div id="aiResultsContent" class="ai-results-content">
+                            <!-- Dynamic content will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ─── EXPORT PANEL ─── -->
                 <form id="cutForm">
                     <div class="export-panel">

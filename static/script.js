@@ -35,9 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // ─── 1. WAVESURFER SETUP ───
     wavesurfer = WaveSurfer.create({
         container: '#waveform',
-        waveColor: '#c4c8d0',
-        progressColor: '#D32F2F',
-        cursorColor: '#1a1a2e',
+        waveColor: '#CBD5E1',
+        progressColor: '#2563EB',
+        cursorColor: '#1E293B',
         cursorWidth: 2,
         height: 140,
         barWidth: 2,
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const region = wsRegions.addRegion({
             start: start,
             end: end,
-            color: `rgba(211, 47, 47, ${alpha})`,
+            color: `rgba(37, 99, 235, ${alpha})`,
             drag: true,
             resize: true
         });
@@ -241,8 +241,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const regionData = allRegions.find(r => r.id === regionId);
         if (regionData) {
             selectedRegion = regionData;
-            regionData.region.element.style.border = '2px solid #D32F2F';
-            regionData.region.element.style.boxShadow = '0 0 12px rgba(211, 47, 47, 0.35)';
+            regionData.region.element.style.border = '2px solid #2563EB';
+            regionData.region.element.style.boxShadow = '0 0 12px rgba(37, 99, 235, 0.35)';
 
             const idx = allRegions.indexOf(regionData);
             const items = document.querySelectorAll('.region-item');
@@ -715,6 +715,599 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
         setTimeout(() => toast.remove(), 3500);
     }
+
+    // ─── 14. 🤖 AI AUDIO PROCESSING UX ───
+    let allAiRegions = [];
+    let detectedBeats = [];
+    let snapToBeatsEnabled = false;
+    let isSnapping = false;
+
+    // Helper to clear AI markers from the waveform
+    function clearAiMarkers() {
+        allAiRegions.forEach(r => {
+            try { r.remove(); } catch(e) {}
+        });
+        allAiRegions = [];
+    }
+
+    // Helper to add non-editable AI display regions
+    function addAiMarker(start, end, color, content = '') {
+        const reg = wsRegions.addRegion({
+            start: start,
+            end: end,
+            color: color,
+            drag: false,
+            resize: false,
+            content: content
+        });
+        allAiRegions.push(reg);
+        return reg;
+    }
+
+    // Helper to get active file blob
+    function getActiveAudioFile() {
+        if (recordedBlob && !fileInput.files[0]) {
+            return recordedBlob;
+        } else if (fileInput.files[0]) {
+            return fileInput.files[0];
+        }
+        return null;
+    }
+
+    // Main AI run helper
+    async function runAIFeature(btnId, endpoint, extraParams = {}, onResponse) {
+        const file = getActiveAudioFile();
+        if (!file) {
+            showToast('Please upload or record an audio file first.', 'warning');
+            return;
+        }
+
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+
+        btn.classList.add('loading');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Running...`;
+
+        const formData = new FormData();
+        formData.append('file', file, file.name || 'audio.webm');
+        for (const [key, val] of Object.entries(extraParams)) {
+            formData.append(key, val);
+        }
+
+        const resultsPanel = document.getElementById('aiResultsPanel');
+        const resultsContent = document.getElementById('aiResultsContent');
+
+        try {
+            showToast('🤖 AI processing started...', 'info');
+            const resp = await fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!resp.ok) {
+                const text = await resp.text();
+                throw new Error(text || 'Server error');
+            }
+
+            // Check if binary download (noise-reduce returns a file)
+            const contentType = resp.headers.get('content-type');
+            if (contentType && (contentType.includes('audio/') || contentType.includes('application/octet-stream') || endpoint.includes('noise-reduce'))) {
+                const blob = await resp.blob();
+                onResponse(blob);
+            } else {
+                const json = await resp.json();
+                if (json.error) {
+                    throw new Error(json.error);
+                }
+                onResponse(json);
+            }
+        } catch (err) {
+            console.error('[AI Error]', err);
+            showToast(`🤖 AI Error: ${err.message}`, 'error');
+        } finally {
+            btn.classList.remove('loading');
+            btn.innerHTML = originalHtml;
+        }
+    }
+
+    // AI Silence detection
+    document.getElementById('aiSilenceBtn').onclick = () => {
+        runAIFeature('aiSilenceBtn', '/ai/detect-silence', { min_silence_len: 0.5, silence_thresh: 40 }, (data) => {
+            clearAiMarkers();
+            
+            const resultsPanel = document.getElementById('aiResultsPanel');
+            const resultsContent = document.getElementById('aiResultsContent');
+            resultsPanel.classList.remove('hidden');
+
+            if (!data || data.length === 0) {
+                resultsContent.innerHTML = `
+                    <div style="text-align:center; padding:12px; color:var(--text-secondary);">
+                        <i class="fas fa-info-circle" style="font-size:1.2rem; margin-bottom:6px; color:var(--ai-accent);"></i>
+                        <p>No silent regions found in this audio file.</p>
+                    </div>`;
+                showToast('No silence detected.', 'info');
+                return;
+            }
+
+            // Draw silence regions
+            data.forEach((region, i) => {
+                addAiMarker(region.start, region.end, 'rgba(100, 100, 100, 0.25)', `Silence ${i+1}`);
+            });
+
+            // Populate results HTML
+            let rowsHtml = '';
+            data.forEach((region, i) => {
+                rowsHtml += `
+                    <div class="ai-stat-row">
+                        <span class="ai-stat-label">Silence #${i+1} (${formatTimePrecise(region.duration)}s)</span>
+                        <span class="ai-stat-value">${formatTimePrecise(region.start)} → ${formatTimePrecise(region.end)}</span>
+                    </div>`;
+            });
+
+            resultsContent.innerHTML = `
+                <div class="transcript-container">
+                    <p style="margin-bottom:8px; font-weight:500;">Detected <strong>${data.length}</strong> silent region(s) (highlighted in gray):</p>
+                    <div style="max-height:160px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:10px; background:var(--surface);">
+                        ${rowsHtml}
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button type="button" class="ai-action-btn" id="aiSplitSilencesBtn">
+                            <i class="fas fa-cut"></i> Split at Silences
+                        </button>
+                        <button type="button" class="ai-action-btn-outline" id="aiClearSilenceOverlayBtn">
+                            <i class="fas fa-eraser"></i> Clear Overlay
+                        </button>
+                    </div>
+                </div>`;
+
+            // Action: Clear overlay
+            document.getElementById('aiClearSilenceOverlayBtn').onclick = () => {
+                clearAiMarkers();
+                resultsPanel.classList.add('hidden');
+            };
+
+            // Action: Auto-split at silences
+            document.getElementById('aiSplitSilencesBtn').onclick = () => {
+                if (data.length === 0) return;
+                
+                // Clear existing user regions
+                allRegions.forEach(r => r.region.remove());
+                allRegions = [];
+                selectedRegion = null;
+
+                const duration = wavesurfer.getDuration();
+                
+                // Calculate non-silent regions from silence regions
+                let nonSilents = [];
+                let current = 0.0;
+                
+                data.forEach(silence => {
+                    if (silence.start - current >= 0.1) {
+                        nonSilents.push({ start: current, end: silence.start });
+                    }
+                    current = silence.end;
+                });
+                if (duration - current >= 0.1) {
+                    nonSilents.push({ start: current, end: duration });
+                }
+
+                // Add non-silent regions to the timeline
+                nonSilents.forEach((ns, idx) => {
+                    addRegion(ns.start, ns.end, `Speech ${idx+1}`, false);
+                });
+
+                pushUndo('Split at Silences', nonSilents);
+                updateRegionList();
+                clearAiMarkers();
+                resultsPanel.classList.add('hidden');
+                showToast(`✂️ Created ${nonSilents.length} speech regions!`, 'success');
+            };
+
+            showToast(`Smart Silence: Detected ${data.length} regions.`, 'success');
+        });
+    };
+
+    // AI Auto Trim silence
+    document.getElementById('aiTrimBtn').onclick = () => {
+        runAIFeature('aiTrimBtn', '/ai/auto-trim', { threshold: 40 }, (data) => {
+            const resultsPanel = document.getElementById('aiResultsPanel');
+            const resultsContent = document.getElementById('aiResultsContent');
+            resultsPanel.classList.remove('hidden');
+
+            resultsContent.innerHTML = `
+                <div class="transcript-container">
+                    <p style="margin-bottom:8px; font-weight:500;">Calculated trim points to remove start/end silence:</p>
+                    <div style="border:1px solid var(--border); border-radius:8px; padding:12px; background:var(--surface); margin-bottom:12px;">
+                        <div class="ai-stat-row">
+                            <span class="ai-stat-label">Original Duration</span>
+                            <span class="ai-stat-value">${formatTimePrecise(data.total_duration)}s</span>
+                        </div>
+                        <div class="ai-stat-row">
+                            <span class="ai-stat-label">Trimmed Start Time</span>
+                            <span class="ai-stat-value">${formatTimePrecise(data.trimmed_start)}s (${formatTimePrecise(data.removed_start_ms/1000)}s removed)</span>
+                        </div>
+                        <div class="ai-stat-row">
+                            <span class="ai-stat-label">Trimmed End Time</span>
+                            <span class="ai-stat-value">${formatTimePrecise(data.trimmed_end)}s (${formatTimePrecise(data.removed_end_ms/1000)}s removed)</span>
+                        </div>
+                        <div class="ai-stat-row">
+                            <span class="ai-stat-label">New Duration</span>
+                            <span class="ai-stat-value">${formatTimePrecise(data.trimmed_end - data.trimmed_start)}s</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button type="button" class="ai-action-btn" id="aiApplyTrimBtn">
+                            <i class="fas fa-crop-alt"></i> Apply Trim Region
+                        </button>
+                        <button type="button" class="ai-action-btn-outline" id="aiCloseTrimBtn">
+                            <i class="fas fa-times"></i> Dismiss
+                        </button>
+                    </div>
+                </div>`;
+
+            document.getElementById('aiCloseTrimBtn').onclick = () => {
+                resultsPanel.classList.add('hidden');
+            };
+
+            // Action: Apply trim points
+            document.getElementById('aiApplyTrimBtn').onclick = () => {
+                // Clear user regions
+                allRegions.forEach(r => r.region.remove());
+                allRegions = [];
+                selectedRegion = null;
+
+                // Add trimmed region
+                const name = "Trimmed Audio";
+                addRegion(data.trimmed_start, data.trimmed_end, name);
+                
+                // Highlight the new region
+                if (allRegions.length > 0) {
+                    selectRegion(allRegions[0].id);
+                }
+
+                resultsPanel.classList.add('hidden');
+                showToast('✂️ Applied trim points to editor!', 'success');
+            };
+
+            showToast('Auto Trim calculation complete!', 'success');
+        });
+    };
+
+    // AI Beat & BPM detection
+    document.getElementById('aiBeatBtn').onclick = () => {
+        runAIFeature('aiBeatBtn', '/ai/detect-beats', {}, (data) => {
+            clearAiMarkers();
+            detectedBeats = data.beat_times || [];
+
+            const resultsPanel = document.getElementById('aiResultsPanel');
+            const resultsContent = document.getElementById('aiResultsContent');
+            resultsPanel.classList.remove('hidden');
+
+            // Draw beat lines
+            detectedBeats.forEach(t => {
+                addAiMarker(t, t + 0.02, 'rgba(249, 115, 22, 0.45)');
+            });
+
+            resultsContent.innerHTML = `
+                <div class="transcript-container">
+                    <div class="ai-bpm-container">
+                        <div class="ai-bpm-badge">
+                            <span class="ai-bpm-number">${data.bpm}</span>
+                            <span class="ai-bpm-label">BPM (Tempo)</span>
+                        </div>
+                        <div class="ai-bpm-details">
+                            <div class="ai-bpm-detail-item">
+                                <i class="fas fa-drum"></i> Total Beats: <strong>${data.total_beats}</strong>
+                            </div>
+                            <div class="ai-bpm-detail-item">
+                                <i class="fas fa-clock"></i> Average Interval: <strong>${(60 / data.bpm).toFixed(3)}s</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ai-snap-container">
+                        <input type="checkbox" id="aiSnapCheckbox" ${snapToBeatsEnabled ? 'checked' : ''}>
+                        <label for="aiSnapCheckbox">🧲 Snap region adjustments to closest beat markers</label>
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-top:8px;">
+                        <button type="button" class="ai-action-btn-outline" id="aiClearBeatsOverlayBtn">
+                            <i class="fas fa-eraser"></i> Clear Overlay
+                        </button>
+                    </div>
+                </div>`;
+
+            // Snap checkbox toggle
+            document.getElementById('aiSnapCheckbox').onchange = (e) => {
+                snapToBeatsEnabled = e.target.checked;
+                showToast(snapToBeatsEnabled ? '🧲 Snap-to-beats enabled' : 'Snap-to-beats disabled', 'info');
+            };
+
+            document.getElementById('aiClearBeatsOverlayBtn').onclick = () => {
+                clearAiMarkers();
+                detectedBeats = [];
+                snapToBeatsEnabled = false;
+                resultsPanel.classList.add('hidden');
+            };
+
+            showToast(`🎵 Beat detection success: ${data.bpm} BPM`, 'success');
+        });
+    };
+
+    // Helper to find closest beat time
+    function getClosestBeat(time) {
+        if (detectedBeats.length === 0) return time;
+        let closest = detectedBeats[0];
+        let minDiff = Math.abs(time - closest);
+        for (let i = 1; i < detectedBeats.length; i++) {
+            let diff = Math.abs(time - detectedBeats[i]);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closest = detectedBeats[i];
+            }
+        }
+        return closest;
+    }
+
+    // Modify region update logic in script.js to support snap to beats!
+    // We will hook into wavesurfer region update events if snap is enabled
+    wsRegions.on('region-updated', (region) => {
+        if (isSnapping) return;
+        if (snapToBeatsEnabled && detectedBeats.length > 0) {
+            const currentStart = region.start;
+            const currentEnd = region.end;
+            const snappedStart = getClosestBeat(currentStart);
+            const snappedEnd = getClosestBeat(currentEnd);
+
+            // Avoid collapsing the region
+            if (snappedEnd > snappedStart) {
+                if (region.start !== snappedStart || region.end !== snappedEnd) {
+                    isSnapping = true;
+                    try {
+                        region.setOptions({
+                            start: snappedStart,
+                            end: snappedEnd
+                        });
+                    } finally {
+                        isSnapping = false;
+                    }
+                }
+            }
+        }
+        updateRegionList();
+    });
+
+    // AI Noise Reduction
+    document.getElementById('aiDenoiseBtn').onclick = () => {
+        runAIFeature('aiDenoiseBtn', '/ai/noise-reduce', {}, (blob) => {
+            // Re-load the denoised blob into Wavesurfer
+            loadAudio(blob);
+
+            // Keep reference to it so exporting works with the denoised audio
+            recordedBlob = blob;
+
+            // Clear fileInput value so we upload the new blob rather than the old local file input
+            fileInput.value = '';
+
+            const resultsPanel = document.getElementById('aiResultsPanel');
+            const resultsContent = document.getElementById('aiResultsContent');
+            resultsPanel.classList.remove('hidden');
+
+            resultsContent.innerHTML = `
+                <div class="transcript-container">
+                    <p style="color:#27ae60; font-weight:600;"><i class="fas fa-check-circle"></i> Local Noise Reduction Complete!</p>
+                    <p style="margin-top:6px;">Background hum, hiss, and noise removed. The processed audio has been successfully loaded into the editor timeline.</p>
+                    
+                    <div style="display:flex; gap:10px; margin-top:12px;">
+                        <button type="button" class="ai-action-btn" id="aiDownloadDenoisedBtn">
+                            <i class="fas fa-download"></i> Save Cleaned Audio File
+                        </button>
+                        <button type="button" class="ai-action-btn-outline" id="aiDismissDenoiseBtn">
+                            <i class="fas fa-times"></i> Dismiss
+                        </button>
+                    </div>
+                </div>`;
+
+            // Action: Save Denoised File directly
+            document.getElementById('aiDownloadDenoisedBtn').onclick = () => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `denoised_audio.wav`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            };
+
+            document.getElementById('aiDismissDenoiseBtn').onclick = () => {
+                resultsPanel.classList.add('hidden');
+            };
+
+            showToast('🔊 Noise reduction applied!', 'success');
+        });
+    };
+
+    // AI Voice Activity Detection (VAD)
+    document.getElementById('aiVadBtn').onclick = () => {
+        runAIFeature('aiVadBtn', '/ai/detect-vad', { threshold_db: -35.0 }, (data) => {
+            clearAiMarkers();
+
+            const resultsPanel = document.getElementById('aiResultsPanel');
+            const resultsContent = document.getElementById('aiResultsContent');
+            resultsPanel.classList.remove('hidden');
+
+            if (!data || data.length === 0) {
+                resultsContent.innerHTML = `<p>No voice segments found.</p>`;
+                return;
+            }
+
+            // Draw VAD regions
+            let speechCount = 0;
+            data.forEach(seg => {
+                if (seg.type === 'speech') {
+                    speechCount++;
+                    addAiMarker(seg.start, seg.end, 'rgba(46, 204, 113, 0.22)', `Speech`);
+                } else {
+                    addAiMarker(seg.start, seg.end, 'rgba(100, 100, 100, 0.15)', `Silence`);
+                }
+            });
+
+            resultsContent.innerHTML = `
+                <div class="transcript-container">
+                    <p style="margin-bottom:8px; font-weight:500;">Isolated <strong>${speechCount}</strong> vocal sections (highlighted in green):</p>
+                    <div style="display:flex; gap:10px; margin-top:8px;">
+                        <button type="button" class="ai-action-btn" id="aiExtractVocalsBtn">
+                            <i class="fas fa-external-link-alt"></i> Extract Speech Sections
+                        </button>
+                        <button type="button" class="ai-action-btn-outline" id="aiClearVadOverlayBtn">
+                            <i class="fas fa-eraser"></i> Clear Overlay
+                        </button>
+                    </div>
+                </div>`;
+
+            document.getElementById('aiClearVadOverlayBtn').onclick = () => {
+                clearAiMarkers();
+                resultsPanel.classList.add('hidden');
+            };
+
+            // Action: Auto-create regions for vocal speech blocks only
+            document.getElementById('aiExtractVocalsBtn').onclick = () => {
+                // Clear user regions
+                allRegions.forEach(r => r.region.remove());
+                allRegions = [];
+                selectedRegion = null;
+
+                let count = 1;
+                data.forEach(seg => {
+                    if (seg.type === 'speech') {
+                        addRegion(seg.start, seg.end, `Vocal Section ${count++}`, false);
+                    }
+                });
+
+                pushUndo('Extract Speech Regions', data);
+                updateRegionList();
+                clearAiMarkers();
+                resultsPanel.classList.add('hidden');
+                showToast(`🗣️ Extracted ${count - 1} speech regions!`, 'success');
+            };
+
+            showToast(`Voice Activity: Identified ${speechCount} vocal section(s).`, 'success');
+        });
+    };
+
+    // AI Speech-to-Text Transcription
+    const transcribeBtn = document.getElementById('aiTranscribeBtn');
+    if (transcribeBtn) {
+        transcribeBtn.onclick = () => {
+            runAIFeature('aiTranscribeBtn', '/ai/transcribe', {}, (data) => {
+            const resultsPanel = document.getElementById('aiResultsPanel');
+            const resultsContent = document.getElementById('aiResultsContent');
+            resultsPanel.classList.remove('hidden');
+
+            if (!data.available) {
+                resultsContent.innerHTML = `
+                    <div style="border:1px solid #ffccd5; background:#fff5f6; border-radius:8px; padding:14px; color:#c92a2a;">
+                        <h6 style="margin:0 0 6px; font-weight:600;"><i class="fas fa-exclamation-triangle"></i> Transcription Unavailable</h6>
+                        <p style="font-size:0.8rem; line-height:1.4;">${data.error}</p>
+                    </div>`;
+                showToast('Whisper model not installed.', 'warning');
+                return;
+            }
+
+            // Draw segment markers as gray markers on wavesurfer
+            clearAiMarkers();
+
+            let linesHtml = '';
+            data.segments.forEach((seg, i) => {
+                linesHtml += `
+                    <div class="transcript-line" data-start="${seg.start}" data-end="${seg.end}" id="transcriptLine_${i}">
+                        <span class="transcript-time">${formatTimePrecise(seg.start)}</span>
+                        <span class="transcript-text">${seg.text}</span>
+                    </div>`;
+            });
+
+            resultsContent.innerHTML = `
+                <div class="transcript-container">
+                    <div class="transcript-meta">
+                        <span>Language detected: <strong>${data.language.toUpperCase()}</strong></span>
+                        <button type="button" class="mini-btn" id="copyTranscriptBtn" title="Copy full transcript text">
+                            <i class="fas fa-copy"></i> Copy Text
+                        </button>
+                    </div>
+                    <div class="transcript-panel" id="transcriptLinesContainer">
+                        ${linesHtml}
+                    </div>
+                </div>`;
+
+            // Action: Click a line in transcript to jump playhead + highlight
+            const lines = document.getElementById('transcriptLinesContainer').querySelectorAll('.transcript-line');
+            lines.forEach(line => {
+                line.onclick = () => {
+                    const start = parseFloat(line.dataset.start);
+                    wavesurfer.setTime(start);
+                    
+                    // Highlight active
+                    lines.forEach(l => l.classList.remove('active'));
+                    line.classList.add('active');
+                };
+            });
+
+            // Playhead highlight sync is handled by the global audio process listener
+
+            // Action: Copy Transcript to clipboard
+            document.getElementById('copyTranscriptBtn').onclick = () => {
+                navigator.clipboard.writeText(data.full_text).then(() => {
+                    showToast('📋 Transcript copied to clipboard!', 'success');
+                }).catch(() => {
+                    showToast('Failed to copy transcript text.', 'error');
+                });
+            };
+
+            showToast('📝 Transcription timeline loaded!', 'success');
+        });
+    }
+
+    // Results panel close button
+    document.getElementById('closeAiResults').onclick = () => {
+        document.getElementById('aiResultsPanel').classList.add('hidden');
+        clearAiMarkers();
+    };
+
+    // Global playhead tracking for transcript sync (called on play and seek)
+    function syncTranscriptPlayhead() {
+        const cur = wavesurfer.getCurrentTime();
+        const container = document.getElementById('transcriptLinesContainer');
+        if (!container) return;
+        const lines = container.querySelectorAll('.transcript-line');
+        if (lines.length === 0) return;
+        
+        let activeIdx = -1;
+        lines.forEach((line, idx) => {
+            const start = parseFloat(line.dataset.start);
+            const end = parseFloat(line.dataset.end);
+            if (cur >= start && cur <= end) {
+                activeIdx = idx;
+            }
+        });
+
+        if (activeIdx !== -1) {
+            lines.forEach((l, idx) => {
+                if (idx === activeIdx) {
+                    if (!l.classList.contains('active')) {
+                        l.classList.add('active');
+                        l.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                } else {
+                    l.classList.remove('active');
+                }
+            });
+        }
+    }
+
+    wavesurfer.on('audioprocess', syncTranscriptPlayhead);
+    wavesurfer.on('seeking', syncTranscriptPlayhead);
 
     // Initialize undo button state
     updateUndoBtn();

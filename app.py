@@ -2,7 +2,8 @@ import os
 import uuid
 import json
 import zipfile
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request, send_file, jsonify
+import ai_processor
 from pydub import AudioSegment
 from logger import log_upload_details
 from io import BytesIO
@@ -161,6 +162,127 @@ def cut_audio():
     except Exception as e:
         print(f"Error: {e}")
         return f"Server Error: {str(e)}", 500
+
+# Helper to save upload file temporarily
+def save_temp_upload(file):
+    unique_id = str(uuid.uuid4())
+    original_ext = os.path.splitext(file.filename)[1] or ".webm"
+    temp_path = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_{unique_id}{original_ext}")
+    file.save(temp_path)
+    return temp_path
+
+@app.route('/ai/detect-silence', methods=['POST'])
+def ai_detect_silence():
+    if 'file' not in request.files: return "No file", 400
+    file = request.files['file']
+    if file.filename == '': return "No file", 400
+    
+    min_silence_len = float(request.form.get('min_silence_len', 0.5))
+    silence_thresh = float(request.form.get('silence_thresh', 40))
+    
+    temp_path = save_temp_upload(file)
+    try:
+        results = ai_processor.detect_silence(temp_path, min_silence_len, silence_thresh)
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+@app.route('/ai/auto-trim', methods=['POST'])
+def ai_auto_trim():
+    if 'file' not in request.files: return "No file", 400
+    file = request.files['file']
+    if file.filename == '': return "No file", 400
+    
+    threshold = float(request.form.get('threshold', 40))
+    
+    temp_path = save_temp_upload(file)
+    try:
+        results = ai_processor.auto_trim_silence(temp_path, threshold)
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+@app.route('/ai/detect-beats', methods=['POST'])
+def ai_detect_beats():
+    if 'file' not in request.files: return "No file", 400
+    file = request.files['file']
+    if file.filename == '': return "No file", 400
+    
+    temp_path = save_temp_upload(file)
+    try:
+        results = ai_processor.detect_beats(temp_path)
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+@app.route('/ai/detect-vad', methods=['POST'])
+def ai_detect_vad():
+    if 'file' not in request.files: return "No file", 400
+    file = request.files['file']
+    if file.filename == '': return "No file", 400
+    
+    threshold_db = float(request.form.get('threshold_db', -35.0))
+    
+    temp_path = save_temp_upload(file)
+    try:
+        results = ai_processor.detect_voice_activity(temp_path, threshold_db)
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+@app.route('/ai/transcribe', methods=['POST'])
+def ai_transcribe():
+    if 'file' not in request.files: return "No file", 400
+    file = request.files['file']
+    if file.filename == '': return "No file", 400
+    
+    temp_path = save_temp_upload(file)
+    try:
+        results = ai_processor.transcribe_audio(temp_path)
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+@app.route('/ai/noise-reduce', methods=['POST'])
+def ai_noise_reduce():
+    if 'file' not in request.files: return "No file", 400
+    file = request.files['file']
+    if file.filename == '': return "No file", 400
+    
+    temp_path = save_temp_upload(file)
+    try:
+        unique_id = str(uuid.uuid4())
+        output_filename = f"denoised_{unique_id}.wav"
+        output_path = os.path.join(app.config['PROCESSED_FOLDER'], output_filename)
+        
+        ai_processor.reduce_noise(temp_path, output_path)
+        
+        base_name = os.path.splitext(file.filename)[0]
+        return send_file(
+            output_path,
+            as_attachment=True,
+            download_name=f"denoised_{base_name}.wav"
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
