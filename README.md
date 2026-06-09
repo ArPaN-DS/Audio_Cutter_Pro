@@ -45,7 +45,7 @@
 | ⌨️ **Keyboard Shortcuts** | `Space`, `Delete`, `Ctrl+Z`, `← / →`, `M`, `?` |
 | 📱 **Fully Responsive** | Works on mobile, tablet, and desktop |
 | 🎨 **Premium Design** | Glassmorphism UI — clean, modern, professional |
-| 🤖 **AI-Powered Analysis** | Local silence detection, auto-trim, beat tracking (BPM), voice activity detection (VAD), local noise reduction, and optional Whisper translation |
+| 🤖 **AI-Powered Analysis** | Local silence detection, auto-trim, beat tracking (BPM), voice activity detection (VAD), and local noise reduction |
 
 ---
 
@@ -123,7 +123,7 @@ python app.py
 ```
 Audio_Cutter/
 ├── app.py                  # Flask backend — routes & audio processing
-├── ai_processor.py         # Local AI processing engine (silence, beats, denoise, Whisper)
+├── ai_processor.py         # Local AI processing engine (silence, beats, denoise, speech detection)
 ├── logger.py               # PostgreSQL upload logger (optional)
 ├── requirements.txt        # Python dependencies
 ├── .env.example            # Environment configuration template
@@ -189,7 +189,7 @@ cp .env.example .env
 Planned features for upcoming releases:
 
 - [x] **v1.1** — Waveform zoom controls + speed adjustment (0.5×–2×)
-- [x] **v1.2** — Local AI integrations (Silence detection, auto-trim, BPM, denoise, Whisper)
+- [x] **v1.2** — Local AI integrations (Silence detection, auto-trim, BPM, denoise)
 - [ ] **v1.3** — Batch file processing (multiple files in one session)
 - [ ] **v1.4** — Audio merge from multiple source files
 - [ ] **v1.5** — Dark / Light mode toggle

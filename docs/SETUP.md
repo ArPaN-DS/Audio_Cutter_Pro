@@ -123,13 +123,6 @@ This installs the core dependencies, including:
 - **noisereduce** — Background noise reduction
 - **psycopg2-binary** — PostgreSQL database logger
 
-### 🤖 Optional AI Transcription (Whisper)
-If you want to use the **AI Speech-to-Text Transcription** feature, you will need to install the OpenAI Whisper library. This requires PyTorch and will download approximately 2-3GB of files:
-
-```bash
-pip install openai-whisper
-```
-
 ---
 
 ## Step 6 — Configure Environment (Optional)
