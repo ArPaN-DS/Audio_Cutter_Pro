@@ -1,5 +1,4 @@
 import os
-import time
 import uuid
 import json
 import zipfile
@@ -8,8 +7,15 @@ from pydub import AudioSegment
 from logger import log_upload_details
 from io import BytesIO
 
+# Load environment variables from .env file if present
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv not installed; rely on system environment variables
+
 app = Flask(__name__)
-app.secret_key = "audio_cutter_master_key"
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change-me-in-production")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
