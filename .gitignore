@@ -34,5 +34,9 @@ logs/*
 Thumbs.db
 desktop.ini
 
+# ─── Internal / non-public dirs ───
+github_profile/
+github_profile_repo/
+
 # ─── Misc ───
 *.log
