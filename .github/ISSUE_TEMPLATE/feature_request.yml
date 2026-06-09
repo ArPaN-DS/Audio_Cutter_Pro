@@ -1,0 +1,76 @@
+name: Feature Request
+description: Suggest a new feature or improvement for Audio Cutter Pro
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Got an idea that would make Audio Cutter Pro better? We'd love to hear it!
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 🔍 Problem Statement
+      description: What problem does this feature solve? What is missing or frustrating about the current experience?
+      placeholder: "I'm always frustrated when I try to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 💡 Proposed Solution
+      description: Describe the feature you'd like to see.
+      placeholder: "It would be great if..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 🔄 Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 📂 Feature Category
+      options:
+        - Audio Processing (new effect/filter)
+        - Export / Format support
+        - UI / UX improvement
+        - Performance
+        - Keyboard shortcuts
+        - Mobile / Accessibility
+        - Developer / API
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: ⚡ Priority (in your opinion)
+      options:
+        - Low — nice to have
+        - Medium — would use regularly
+        - High — blocking my workflow
+    validations:
+      required: true
+
+  - type: textarea
+    id: mockup
+    attributes:
+      label: 🎨 Mockups / Examples
+      description: If you have a wireframe, sketch, or example from another tool, share it here.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ Checklist
+      options:
+        - label: I have searched existing issues and this is not a duplicate
+          required: true
+        - label: I am willing to help implement or test this feature
