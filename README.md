@@ -26,9 +26,9 @@
 > **No subscriptions. No uploads to third-party servers. No account required.**
 > Your audio files never leave your machine — everything is processed locally on your own server.
 
-| 🔒 Privacy-First | ⚡ Feature-Rich | 🌐 Browser-Based |
-|:---:|:---:|:---:|
-| Files stay on your server — never sent to cloud APIs | Multi-region cutting, effects, undo/redo, mic recording | Works on any device with a browser — no app install |
+| 🔒 Privacy-First | 🤖 Local AI Tools | ⚡ Feature-Rich | 🌐 Browser-Based |
+|:---:|:---:|:---:|:---:|
+| Files stay on your server — never sent to cloud APIs | Silence detection, auto-trim, BPM, and noise reduction | Multi-region cutting, effects, undo/redo, mic recording | Works on any device with a browser — no app install |
 
 ---
 
