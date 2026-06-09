@@ -45,7 +45,7 @@
 | ⌨️ **Keyboard Shortcuts** | `Space`, `Delete`, `Ctrl+Z`, `← / →`, `M`, `?` |
 | 📱 **Fully Responsive** | Works on mobile, tablet, and desktop |
 | 🎨 **Premium Design** | Glassmorphism UI — clean, modern, professional |
-| 🤖 **AI-Powered Analysis** | Local silence detection, auto-trim, beat tracking (BPM), voice activity detection (VAD), and local noise reduction — runs 100% on CPU, even on resource-constrained devices |
+| 🤖 **AI-Powered Analysis** | Local silence detection, auto-trim, beat tracking (BPM), voice activity detection (VAD), **speech-to-text transcription** (requires `openai-whisper`), and local noise reduction — runs 100% on CPU |
 
 ---
 
@@ -189,7 +189,7 @@ cp .env.example .env
 Planned features for upcoming releases:
 
 - [x] **v1.1** — Waveform zoom controls + speed adjustment (0.5×–2×)
-- [x] **v1.2** — Local AI integrations (Silence detection, auto-trim, BPM, denoise)
+- [x] **v1.2** — Local AI integrations (Silence detection, auto-trim, BPM, denoise, Whisper transcription)
 - [ ] **v1.3** — Batch file processing (multiple files in one session)
 - [ ] **v1.4** — Audio merge from multiple source files
 - [ ] **v1.5** — Dark / Light mode toggle

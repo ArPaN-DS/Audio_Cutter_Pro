@@ -32,6 +32,21 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.0.1] — 2026-06-10 🐛 Bug Fix Release
+
+### Fixed
+- **WaveSurfer.js v7 plugin wiring** — `wsRegions` is now created before `WaveSurfer.create()` and passed directly into the `plugins` array, replacing the broken `wavesurfer.plugins[1]` accessor that returned `undefined` and prevented audio from loading into the editor
+- **Region playback** — "Play just this region" button now calls `region.play()` (WaveSurfer v7 API) instead of the deprecated `wavesurfer.play(start, end)` which was silently ignored
+- **Normalization crash on silent audio** — added guard to skip `apply_gain()` when a segment's dBFS is `-inf` (completely silent), preventing a `ValueError` crash in the `/cut` endpoint
+- **Database logger blocking requests** — logger now reads DB config from environment variables; if `DB_NAME` or `DB_PASSWORD` are unset it writes directly to `logs/activity_log.csv` without ever attempting a TCP connection, eliminating the multi-second stall on every export
+
+### Added
+- **Transcribe Audio button** restored to the AI Audio Assistants panel (`Find Pauses & Speech` card) with purple accent hover styling
+- **CSV fallback logging** — `logger.py` now has a dedicated `log_to_csv()` function used as a fallback when PostgreSQL is not configured or fails to connect (with a hard 3-second `connect_timeout`)
+
+---
+
+
 ## [Unreleased] — Coming Soon
 
 ### Planned

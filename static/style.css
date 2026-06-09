@@ -1065,6 +1065,7 @@ header {
 #aiSilenceBtn:hover .ai-btn-icon { color: #3B82F6; background: rgba(59, 130, 246, 0.08); }
 #aiVadBtn:hover .ai-btn-icon     { color: #0D9488; background: rgba(13, 148, 136, 0.08); }
 #aiBeatBtn:hover .ai-btn-icon    { color: #F97316; background: rgba(249, 115, 22, 0.08); }
+#aiTranscribeBtn:hover .ai-btn-icon { color: #8B5CF6; background: rgba(139, 92, 246, 0.08); }
 
 .ai-btn-texts {
     display: flex;

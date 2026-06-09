@@ -102,8 +102,9 @@ def cut_audio():
                 segment = segment.fade_out(fade_duration)
             if do_normalize:
                 target_dBFS = -14.0
-                change_in_dBFS = target_dBFS - segment.dBFS
-                segment = segment.apply_gain(change_in_dBFS)
+                if segment.dBFS != float('-inf'):
+                    change_in_dBFS = target_dBFS - segment.dBFS
+                    segment = segment.apply_gain(change_in_dBFS)
             if do_reverse:
                 segment = segment.reverse()
             

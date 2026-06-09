@@ -1,37 +1,66 @@
 import psycopg2
 from datetime import datetime
 import os
+import csv
 
 # --- DATABASE CONFIGURATION ---
-DB_CONFIG = {
-    'dbname': 'audio_db',    # The database you created
-    'user': 'postgres',      # The default admin user
-    'password': '12345', # <--- PUT YOUR PASSWORD HERE
-    'host': 'localhost',
-    'port': '5432'
-}
+# Load from environment variables
+DB_HOST = os.environ.get("DB_HOST", "localhost")
+DB_PORT = os.environ.get("DB_PORT", "5432")
+DB_NAME = os.environ.get("DB_NAME", "")
+DB_USER = os.environ.get("DB_USER", "postgres")
+DB_PASSWORD = os.environ.get("DB_PASSWORD", "")
+
+def log_to_csv(timestamp, ip_address, user_agent, filename, file_ext, size_mb, target_format, status):
+    try:
+        csv_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+        os.makedirs(csv_dir, exist_ok=True)
+        csv_path = os.path.join(csv_dir, 'activity_log.csv')
+        write_header = not os.path.exists(csv_path)
+        
+        with open(csv_path, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            if write_header:
+                writer.writerow(["Timestamp", "IP Address", "User Device (Agent)", "File Name", "Original Extension", "File Size (MB)", "Target Format", "Status"])
+            writer.writerow([timestamp.strftime('%Y-%m-%d %H:%M:%S'), ip_address, user_agent, filename, file_ext, size_mb, target_format, status])
+    except Exception as csv_err:
+        print(f"!!! CSV LOGGING ERROR: {csv_err}")
 
 def log_upload_details(request, filename, file_size_bytes, target_format, status="Success"):
     """
-    Connects to PostgreSQL and inserts a new log row.
+    Logs upload details. Attempts PostgreSQL first if configured, falls back to CSV.
     """
+    # 1. GATHER DATA
+    timestamp = datetime.now()
+    
+    # Robust IP detection
+    if request.headers.getlist("X-Forwarded-For"):
+        ip_address = request.headers.getlist("X-Forwarded-For")[0]
+    else:
+        ip_address = request.remote_addr
+
+    user_agent = request.headers.get('User-Agent')
+    file_ext = os.path.splitext(filename)[1]
+    size_mb = round(file_size_bytes / (1024 * 1024), 2)
+
+    # Check if database is configured (non-empty database name and password)
+    # If not configured, write to CSV directly to avoid connection timeout delay.
+    if not DB_NAME or not DB_PASSWORD:
+        # Fall back directly to local CSV logging
+        log_to_csv(timestamp, ip_address, user_agent, filename, file_ext, size_mb, target_format, status)
+        return
+
     conn = None
     try:
-        # 1. GATHER DATA
-        timestamp = datetime.now()
-        
-        # Robust IP detection
-        if request.headers.getlist("X-Forwarded-For"):
-            ip_address = request.headers.getlist("X-Forwarded-For")[0]
-        else:
-            ip_address = request.remote_addr
-
-        user_agent = request.headers.get('User-Agent')
-        file_ext = os.path.splitext(filename)[1]
-        size_mb = round(file_size_bytes / (1024 * 1024), 2)
-
         # 2. CONNECT TO DATABASE
-        conn = psycopg2.connect(**DB_CONFIG)
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT,
+            connect_timeout=3 # limit timeout to 3 seconds to prevent long hangups
+        )
         cur = conn.cursor()
 
         # 3. EXECUTE SQL QUERY
@@ -42,7 +71,6 @@ def log_upload_details(request, filename, file_size_bytes, target_format, status
         """
         
         data = (timestamp, ip_address, user_agent, filename, file_ext, size_mb, target_format, status)
-        
         cur.execute(query, data)
         
         # 4. SAVE CHANGES
@@ -50,8 +78,9 @@ def log_upload_details(request, filename, file_size_bytes, target_format, status
         cur.close()
 
     except Exception as e:
-        # If DB fails, print error but don't crash the User's download
-        print(f"!!! DATABASE ERROR: {e}")
+        print(f"!!! DATABASE ERROR: {e}. Falling back to CSV logging.")
+        # Fall back to CSV on connection or insertion error
+        log_to_csv(timestamp, ip_address, user_agent, filename, file_ext, size_mb, target_format, status)
         
     finally:
         # 5. ALWAYS CLOSE CONNECTION

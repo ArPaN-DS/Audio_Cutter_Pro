@@ -33,6 +33,8 @@ function updateUndoBtn() {
 document.addEventListener('DOMContentLoaded', () => {
 
     // ─── 1. WAVESURFER SETUP ───
+    wsRegions = WaveSurfer.Regions.create();
+
     wavesurfer = WaveSurfer.create({
         container: '#waveform',
         waveColor: '#CBD5E1',
@@ -47,11 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
         normalize: true,
         plugins: [
             WaveSurfer.Timeline.create({ container: '#wave-timeline' }),
-            WaveSurfer.Regions.create()
+            wsRegions
         ]
     });
-
-    wsRegions = wavesurfer.plugins[1];
 
     // ─── 2. TABS ───
     const uploadSec = document.getElementById('uploadSection');
@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Play region button
             div.querySelector('.region-play-btn').onclick = (e) => {
                 e.stopPropagation();
-                wavesurfer.play(r.region.start, r.region.end);
+                r.region.play();
                 selectRegion(r.id);
             };
 
